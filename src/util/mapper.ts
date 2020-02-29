@@ -1,5 +1,5 @@
 import {List, WeatherResponse} from '../model';
-import {IWeatherObject} from '../redux/weather';
+import {IWeatherObject} from '../redux';
 import {convertTimeStampToIso, kelvinToCelcius} from './utilities';
 
 export const mapWeatherResponseToWeatherObject = (

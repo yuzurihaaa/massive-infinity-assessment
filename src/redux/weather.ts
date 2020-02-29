@@ -2,11 +2,12 @@ import {Dispatch} from 'redux';
 
 import {Actions} from './main';
 import {WeatherResponse} from '../model';
-import {weatherMemo} from '../util';
+import {convertTimeStampToIso, kelvinToCelcius, weatherMemo} from '../util';
 import {Alert} from 'react-native';
 
 // Action Names
 const GET_WEATHER = 'GET_WEATHER';
+const SET_SELECTED_WEATHER = 'SET_SELECTED_WEATHER';
 
 // Actions
 const getWeather = () => (dispatch: Dispatch) => {
@@ -23,6 +24,12 @@ const getWeather = () => (dispatch: Dispatch) => {
       return response;
     })
     .then((res: WeatherResponse) => {
+      setSelectedWeather({
+        date: convertTimeStampToIso(res.list[0].dt),
+        maxTemperature: kelvinToCelcius(res.list[0].temp.max),
+        minTemperature: kelvinToCelcius(res.list[0].temp.min),
+        weather: res.list[0].weather[0].main,
+      })(dispatch);
       dispatch({
         type: GET_WEATHER,
         payload: res,
@@ -32,21 +39,21 @@ const getWeather = () => (dispatch: Dispatch) => {
       Alert.alert(
         'Error',
         'Error fetching data',
-        [
-          {
-            text: 'Cancel',
-            onPress: () => console.log('Cancel Pressed'),
-            style: 'cancel',
-          },
-          {text: 'OK', onPress: () => console.log('OK Pressed')},
-        ],
+        [{text: 'OK', onPress: () => {}}],
         {cancelable: false},
       );
     });
 };
 
+const setSelectedWeather = (arg: IWeatherObject) => (dispatch: Dispatch) => {
+  dispatch({
+    type: SET_SELECTED_WEATHER,
+    payload: arg,
+  });
+};
+
 // All Props
-type WeatherProps = WeatherResponse;
+type WeatherProps = WeatherResponse & IWeatherObject;
 
 // Initial State
 export interface IWeatherObject {
@@ -57,6 +64,7 @@ export interface IWeatherObject {
 }
 
 const initialState = {
+  selectedWeather: {} as IWeatherObject,
   weathers: {} as {[key: string]: IWeatherObject},
   dates: [] as string[],
 };
@@ -64,10 +72,22 @@ const initialState = {
 type weather = typeof initialState;
 
 const weather = (state = initialState, action: Actions<WeatherProps>) => {
-  if (action.type === GET_WEATHER) {
-    return weatherMemo(action.payload);
+  switch (action.type) {
+    case GET_WEATHER: {
+      return {
+        ...state,
+        ...weatherMemo(action.payload),
+      };
+    }
+    case SET_SELECTED_WEATHER: {
+      return {
+        ...state,
+        selectedWeather: action.payload,
+      };
+    }
+    default:
+      return state;
   }
-  return state;
 };
 
-export {getWeather, weather};
+export {getWeather, setSelectedWeather, weather};

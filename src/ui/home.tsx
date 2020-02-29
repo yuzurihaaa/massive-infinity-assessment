@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -13,7 +13,7 @@ import Geocoder from 'react-native-geocoder-reborn';
 import {useDispatch, useSelector} from 'react-redux';
 
 import {orangeRed} from '../res/colors';
-import {getWeather, IWeatherObject, State} from '../redux';
+import {getWeather, IWeatherObject, setSelectedWeather, State} from '../redux';
 import {AppBar, LineSeparator, WeatherItem} from './_home';
 import {convertTimeToFormat} from '../util';
 
@@ -22,13 +22,14 @@ const Home = () => {
     state.weather.dates.map(date => state.weather.weathers[date]),
   );
 
-  const weatherMemo = useMemo(() => weatherState, [weatherState]);
+  const selectedWeather: IWeatherObject = useSelector(
+    (state: State) => state.weather.selectedWeather,
+  );
 
   const dispatcher = useDispatch();
 
   const [country, setCountry] = useState('');
   const [countryCode, setCountryCode] = useState('');
-  const [selectedWeather, setSelectedWeather] = useState({} as IWeatherObject);
 
   useEffect(() => {
     Geolocation.getCurrentPosition(info => {
@@ -47,19 +48,11 @@ const Home = () => {
     });
   }, [dispatcher]);
 
-  useEffect(() => {
-    const shouldSetFirstData =
-      weatherMemo.length && Object.entries(selectedWeather).length === 0;
-    if (shouldSetFirstData) {
-      setSelectedWeather(weatherMemo[0]);
-    }
-  }, [selectedWeather, weatherMemo, weatherMemo.length, weatherState.length]);
-
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor={orangeRed} />
       <AppBar title={country} />
-      {weatherState.length ? (
+      {Object.entries(selectedWeather).length ? (
         <SafeAreaView>
           <View style={styles.topItem}>
             <Text style={styles.dateText}>
@@ -70,7 +63,7 @@ const Home = () => {
               {countryCode}
             </Text>
             <Text style={styles.precipitateText}>
-              {selectedWeather.maxTemperature}
+              {selectedWeather.maxTemperature.toFixed(0)}
             </Text>
             <Text style={styles.weatherText}>{selectedWeather.weather}</Text>
           </View>
@@ -78,7 +71,8 @@ const Home = () => {
             data={weatherState}
             keyExtractor={item => item.date}
             renderItem={({item}) => (
-              <TouchableOpacity onPress={() => setSelectedWeather(item)}>
+              <TouchableOpacity
+                onPress={() => dispatcher(setSelectedWeather(item))}>
                 <WeatherItem {...item} />
               </TouchableOpacity>
             )}
