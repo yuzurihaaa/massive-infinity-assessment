@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
   },
   appBarText: {
     color: 'white',
+    fontFamily: 'Sarpanch-Bold',
   },
   parent: {
     flexDirection: 'row',
